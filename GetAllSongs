@@ -1,0 +1,128 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Apr 08 16:50:24 2018
+
+@author: wzw
+"""
+
+import re
+import json
+import time
+from lxml import etree
+import requests
+
+requests.adapters.DEFAULT_RETRIES = 10
+s = requests.session()
+s.keep_alive = False
+    
+def getLyric(musicid,songmid):  
+    url = 'https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric.fcg'  
+    header = {  
+        'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36',  
+        'referer':'https://y.qq.com/n/yqq/song/{}.html'.format(songmid)  
+    }  
+    paramters = {  
+        'nobase64':1,  
+        'musicid':musicid, 
+        'callback':'jsonp1',  
+        'g_tk':'1134533366',  
+        'jsonpCallback':'jsonp1',  
+        'loginUin':'0',  
+        'hostUin':'0',  
+        'format':'jsonp',  
+        'inCharset':'utf8',  
+        'outCharset':'utf-8',  
+        'notice':'0',  
+        'platform':'yqq',  
+        'needNewCode':'0'  
+    }  
+    html = requests.get(url=url,params=paramters,headers=header)  
+    res = json.loads(html.text.lstrip('jsonp1(').rstrip(')'))  
+    if res.has_key('lyric'):  
+        lyric = json.loads(html.text.lstrip('jsonp1(').rstrip(')'))['lyric']  
+        l1 = re.compile(r'&#\d.;',re.S)
+        l2 = re.compile(r'\[[0-9]+\]')
+        l3 = re.compile(r'\[(.*)\]')
+        lyric = l1.sub(r'',lyric)
+        lyric = l2.sub('\n',lyric)
+        lyric = l3.sub('\n',lyric)
+        
+        return dd  
+    else:  
+        return ""
+
+
+singer_ids = []
+fd = open('singer_id.txt', 'r')
+for line in fd.readlines():
+    singer_ids.extend(line.split())
+
+count = 0
+for singer_id in singer_ids:
+    count = count + 1
+    print count
+    url ="https://c.y.qq.com/v8/fcg-bin/fcg_v8_singer_track_cp.fcg?g_tk=5381&jsonpCallback=MusicJsonCallbacksinger_track&loginUin=0&hostUin=0&format=jsonp&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq&needNewCode=0&singermid="+singer_id+"&order=listen&begin=0&num=30&songstatus=1"
+    html = requests.get(url).content
+    #print html
+    r1 = '"total":.*?}'
+    r2 = '"name":".*?"'
+    r3 = '"songid":.*?,'
+    r4 = '"songmid":".*?"'
+    r5 = '"songname":".*?"'
+    total = re.findall(r1, html,re.S | re.M)
+    total = total[0]
+    singer = re.findall(r2, html,re.S | re.M)
+    singer = singer[0]
+    s1 = re.compile(r'"name":')
+    s2 = re.compile(r'"')
+    singer = s1.sub('',singer)
+    singer = s2.sub('',singer)
+    songid = re.findall(r3, html,re.S | re.M)
+    si1 = re.compile(r'"songid":')
+    si2 = re.compile(r',')
+    songmid = re.findall(r4, html,re.S | re.M)
+    sm1 = re.compile(r'"songmid":')
+    sm2 = re.compile(r'"')
+    songname = re.findall(r5, html,re.S | re.M)
+    sn1 = re.compile(r'"songname":')
+    sn2 = re.compile(r'"')
+    for i in range(0,len(songid)):
+        songid[i] = si1.sub('',songid[i])
+        songid[i] = si2.sub('',songid[i])
+        songmid[i] = sm1.sub('',songmid[i])
+        songmid[i] = sm2.sub('',songmid[i])
+        songname[i] = sn1.sub('',songname[i])
+        songname[i] = sn2.sub('',songname[i])
+        name = songname[i] + "#" + singer
+        lyric = getLyric(songid[i],songmid[i])
+        file=open('qqlyric/%s.txt'%name.decode('utf-8'),'w')
+        file.write(lyric.encode('utf8'))
+        file.close()
+        time.sleep(0.3)
+    t1 = re.compile(r'"total":')
+    t2 = re.compile(r'}')
+    total = t1.sub('',total)
+    total = t2.sub('',total) 
+    page_num = int(total)/30 + 1
+    for i in range(1,page_num):
+        begin = 30*i
+        url ="https://c.y.qq.com/v8/fcg-bin/fcg_v8_singer_track_cp.fcg?g_tk=5381&jsonpCallback=MusicJsonCallbacksinger_track&loginUin=0&hostUin=0&format=jsonp&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq&needNewCode=0&singermid="+singer_id+"&order=listen&begin="+str(begin)+"&num=30&songstatus=1"
+        html = requests.get(url).content
+        songid = re.findall(r3, html,re.S | re.M)
+        songmid = re.findall(r4, html,re.S | re.M)
+        songname = re.findall(r5, html,re.S | re.M)
+        for i in range(0,len(songid)):
+            songid[i] = si1.sub('',songid[i])
+            songid[i] = si2.sub('',songid[i])
+            songmid[i] = sm1.sub('',songmid[i])
+            songmid[i] = sm2.sub('',songmid[i])
+            songname[i] = sn1.sub('',songname[i])
+            songname[i] = sn2.sub('',songname[i])
+            name = songname[i] + "#" + singer
+            lyric = getLyric(songid[i],songmid[i])
+            file=open('qqlyric/%s.txt'%name.decode('utf-8'),'w')
+            file.write(lyric.encode('utf8'))
+            file.close()
+            time.sleep(0.3)
+
+
