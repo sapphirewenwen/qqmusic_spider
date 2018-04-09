@@ -1,0 +1,77 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Apr 08 14:55:18 2018
+
+@author: wzw
+"""
+
+import re
+from selenium import webdriver
+import selenium.webdriver.support.ui as ui
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+import time
+import random
+import re
+import glob
+import codecs
+
+singer_id = []
+
+#获取所有华语男歌手ID
+count = 0
+for i in range(0,240):
+    count = count + 1
+    print count
+    driver = webdriver.Firefox()
+    driver.get("https://y.qq.com/portal/singer_list.html#t4={}&t3=all&t2=man&t1=cn&".format(i))
+    a = driver.page_source
+    driver.quit()
+    res = r'data-singermid=".*?"'
+    singer = re.findall(res, a,re.S | re.M)
+    for i in range(1,len(singer)):
+        r1 = re.compile(r'data-singermid="')
+        r2 = re.compile(r'"')
+        singer[i] = r1.sub('',singer[i])
+        singer[i] = r2.sub('',singer[i])
+        singer_id.append(singer[i])
+
+#获取所有华语女歌手ID
+count = 0
+for i in range(0,141):
+    count = count + 1
+    print count
+    driver = webdriver.Firefox()
+    driver.get("https://y.qq.com/portal/singer_list.html#t4={}&t3=all&t2=woman&t1=cn&".format(i))
+    a = driver.page_source
+    driver.quit()
+    res = r'data-singermid=".*?"'
+    singer = re.findall(res, a,re.S | re.M)
+    for i in range(1,len(singer)):
+        r1 = re.compile(r'data-singermid="')
+        r2 = re.compile(r'"')
+        singer[i] = r1.sub('',singer[i])
+        singer[i] = r2.sub('',singer[i])
+        singer_id.append(singer[i])
+
+#获取所有华语组合歌手ID
+count = 0
+for i in range(0,50):
+    count = count + 1
+    print count
+    driver = webdriver.Firefox()
+    driver.get("https://y.qq.com/portal/singer_list.html#t4={}&t3=all&t2=team&t1=cn&".format(i))
+    a = driver.page_source
+    driver.quit()
+    res = r'data-singermid=".*?"'
+    singer = re.findall(res, a,re.S | re.M)
+    for i in range(1,len(singer)):
+        r1 = re.compile(r'data-singermid="')
+        r2 = re.compile(r'"')
+        singer[i] = r1.sub('',singer[i])
+        singer[i] = r2.sub('',singer[i])
+        singer_id.append(singer[i])
+
+s_singer = ''
+s_singer = '\n'.join(singer_id)
+f = open('singer_mid.txt','w')
+f.write(s_singer)
